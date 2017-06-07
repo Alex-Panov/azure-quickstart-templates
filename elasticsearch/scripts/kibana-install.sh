@@ -51,8 +51,13 @@ install_java() {
 }
 
 install_kibana() {
-    # default - ES 2.3.1
-	kibana_url="https://download.elastic.co/kibana/kibana/kibana-4.5.0-linux-x64.tar.gz"
+    # default - ES 5.4.1
+	kibana_url="https://artifacts.elastic.co/downloads/kibana/kibana-5.4.1-linux-x86_64.tar.gz"
+
+	if [[ "${ES_VERSION}" == "2.2.2" ]]; 
+    then
+		kibana_url="https://download.elastic.co/kibana/kibana/kibana-4.5.0-linux-x64.tar.gz"
+	fi
 	
 	if [[ "${ES_VERSION}" == "2.2.2" ]]; 
     then
@@ -130,7 +135,7 @@ then
     error "You must be root to run this script."
 fi
 
-ES_VERSION="2.3.1"
+ES_VERSION="5.4.1"
 INSTALL_MARVEL=0
 INSTALL_SENSE=0
 ELASTICSEARCH_URL="http://10.0.1.4:9200"

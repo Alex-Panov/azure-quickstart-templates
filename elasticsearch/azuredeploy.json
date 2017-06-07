@@ -177,8 +177,9 @@
     },
     "esVersion": {
       "type": "string",
-      "defaultValue": "2.3.1",
+      "defaultValue": "5.4.1",
       "allowedValues": [
+        "5.4.1",
         "2.3.1",
         "2.2.2",
         "2.1.2",

@@ -80,7 +80,7 @@ fi
 
 #Script Parameters
 CLUSTER_NAME="elasticsearch"
-ES_VERSION="2.0.0"
+ES_VERSION="5.4.1"
 MARVEL_ONLY_NODE=0
 DISCOVERY_ENDPOINTS=""
 INSTALL_MARVEL=0
@@ -216,7 +216,7 @@ install_es()
     if [[ "${ES_VERSION}" == \2* ]]; then
         DOWNLOAD_URL="https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/deb/elasticsearch/$ES_VERSION/elasticsearch-$ES_VERSION.deb"
     else
-        DOWNLOAD_URL="https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-$ES_VERSION.deb"
+        DOWNLOAD_URL="https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-$ES_VERSION.deb"
     fi
 
     log "Installing Elaticsearch Version - $ES_VERSION"
@@ -372,12 +372,22 @@ if [[ "${ES_VERSION}" == \2* ]]; then
     echo "network.host: _non_loopback_" >> /etc/elasticsearch/elasticsearch.yml
 fi
 
+if [[ "${ES_VERSION}" == \5* ]]; then
+    echo "network.host: _non_loopback_" >> /etc/elasticsearch/elasticsearch.yml
+fi
+
 if [[ "${MARVEL_ENDPOINTS}" ]]; then
   # non-Marvel node
   mep=$(expand_ip_range "$MARVEL_ENDPOINTS")
   expanded_marvel_endpoints="[\"${mep// /\",\"}\"]"
   
-  if [[ "${ES_VERSION}" == \2* ]]; then
+  if [[ "${ES_VERSION}" == \5* ]]; then
+    # 5.x non-Marvel node
+    echo "marvel.agent.exporters:" >> /etc/elasticsearch/elasticsearch.yml
+    echo "  id1:" >> /etc/elasticsearch/elasticsearch.yml
+    echo "    type: http" >> /etc/elasticsearch/elasticsearch.yml
+    echo "    host: ${expanded_marvel_endpoints}" >> /etc/elasticsearch/elasticsearch.yml
+  elif [[ "${ES_VERSION}" == \2* ]]; then
     # 2.x non-Marvel node
     echo "marvel.agent.exporters:" >> /etc/elasticsearch/elasticsearch.yml
     echo "  id1:" >> /etc/elasticsearch/elasticsearch.yml
@@ -418,7 +428,10 @@ echo "ES_HEAP_SIZE=${ES_HEAP}m" >> /etc/default/elasticsearch
 #Optionally Install Marvel
 if [ ${INSTALL_MARVEL} -ne 0 ]; then
     log "Installing Marvel Plugin"
-    if [[ "${ES_VERSION}" == \2* ]]; then
+    if [[ "${ES_VERSION}" == \5* ]]; then
+        /usr/share/elasticsearch/bin/plugin install license
+        /usr/share/elasticsearch/bin/plugin install marvel-agent
+    elif [[ "${ES_VERSION}" == \2* ]]; then
         /usr/share/elasticsearch/bin/plugin install license
         /usr/share/elasticsearch/bin/plugin install marvel-agent
     else
@@ -429,7 +442,11 @@ fi
 # install the cloud-azure plugin
 if [ ${INSTALL_CLOUD_AZURE} -ne 0 ]; then
     log "Installing Cloud-Azure Plugin"
-    if [[ "${ES_VERSION}" == \2* ]]; then
+    if [[ "${ES_VERSION}" == \5* ]]; then
+        /usr/share/elasticsearch/bin/plugin install cloud-azure
+        echo "cloud.azure.storage.default.account: ${CLOUD_AZURE_ACCOUNT}" >> /etc/elasticsearch/elasticsearch.yml
+        echo "cloud.azure.storage.default.key: ${CLOUD_AZURE_KEY}" >> /etc/elasticsearch/elasticsearch.yml
+    elif [[ "${ES_VERSION}" == \2* ]]; then
         /usr/share/elasticsearch/bin/plugin install cloud-azure
         echo "cloud.azure.storage.default.account: ${CLOUD_AZURE_ACCOUNT}" >> /etc/elasticsearch/elasticsearch.yml
         echo "cloud.azure.storage.default.key: ${CLOUD_AZURE_KEY}" >> /etc/elasticsearch/elasticsearch.yml
